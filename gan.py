@@ -24,7 +24,7 @@ def main():
     GAN = GenerativeAdversarialNetwork(generator, discriminator, latent_space_shape, optimizer)
 
     # Load the dataset and preprocess
-    (mnist_images, _), (_, _) = krs.datasets.fashion_mnist.load_data()
+    (mnist_images, _), (_, _) = krs.datasets.mnist.load_data()
     mnist_images = 2.0 * mnist_images / 255.0 - 1.0  # between -1 and 1
 
     # Training the adversarial network
