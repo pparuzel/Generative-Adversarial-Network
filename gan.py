@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3.7
 
 import tensorflow.keras as krs
 import numpy as np
@@ -6,21 +6,19 @@ import matplotlib.pyplot as plt
 
 from tensorflow.keras.utils import plot_model
 
+''' Suppress warnings '''
+import tensorflow.compat.v1 as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
+
 
 def main():
     image_shape = (28, 28)
     latent_space_shape = (100,)
     optimizer = krs.optimizers.Adam(lr=0.0002, beta_1=0.5)
 
-    # Build the discriminator network
+    # Build GAN
     discriminator = build_discriminator(input_shape=image_shape)
-    discriminator.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
-
-    # Build the generator network
-    discriminator.trainable = False  # freeze discriminator weights after compilation
     generator = build_generator(input_shape=latent_space_shape, output_shape=image_shape)
-
-    # Build the adversarial network
     GAN = GenerativeAdversarialNetwork(generator, discriminator, latent_space_shape, optimizer)
 
     # Load the dataset and preprocess
@@ -28,7 +26,7 @@ def main():
     mnist_images = 2.0 * mnist_images / 255.0 - 1.0  # between -1 and 1
 
     # Training the adversarial network
-    GAN.train(mnist_images, epochs=30000, batch_size=32, save_interval=100)
+    GAN.train(mnist_images, epochs=30000, batch_size=32, save_interval=1000)
 
     # Show a sample
     noise = GAN.create_noise_samples(1)
@@ -46,8 +44,6 @@ def build_discriminator(input_shape):
         krs.layers.LeakyReLU(alpha=0.2),
         krs.layers.Dense(1, activation='sigmoid'),
     ], name='Discriminator')
-    print('\tDiscriminator network')
-    model.summary()
     return model
 
 
@@ -66,25 +62,36 @@ def build_generator(input_shape, output_shape):
         krs.layers.Dense(flat_dims, activation='tanh'),
         krs.layers.Reshape(output_shape),
     ], name='Generator')
-    print('\tGenerator network')
-    model.summary()
     return model
 
 
 class GenerativeAdversarialNetwork:
-    def __init__(self, generator, discriminator, latent_space_shape, optimizer):
-        self.generator = generator
-        self.discriminator = discriminator
+    def __init__(self, generator_model, discriminator_model, latent_space_shape, optimizer):
         self.latent_shape = latent_space_shape
-        # Model flow
+        # Compile discriminator net
+        discriminator_model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['accuracy'])
+        discriminator_model.trainable = False  # freeze weights
+
+        # Impose the flow
         noise_layer = krs.Input(shape=self.latent_shape, name='Noice')
-        generated_data = self.generator(noise_layer)
-        real_or_not = self.discriminator(generated_data)
-        self.model = krs.Model(inputs=[noise_layer], outputs=[real_or_not], name='Adversarial')
+        generated_data = generator_model(noise_layer)
+        real_or_not = discriminator_model(generated_data)
+
+        # Compile adversarial net
+        adversarial = krs.Model(inputs=[noise_layer], outputs=[real_or_not], name='Adversarial')
+        adversarial.compile(optimizer=optimizer, loss='binary_crossentropy')
+
+        # Assign compiled models
+        self.generator = generator_model
+        self.discriminator = discriminator_model
+        self.model = adversarial
+
         # Summary
-        print('\tAdversarial network')
+        self.generator.summary()
+        self.discriminator.summary()
         self.model.summary()
-        self.model.compile(optimizer=optimizer, loss='binary_crossentropy')
+
+        # Save model architecture image
         plot_model(self.model, to_file='images/adversarial-model.png', show_shapes=True, show_layer_names=True)
         plot_model(self.generator, to_file='images/generator-model.png', show_shapes=True, show_layer_names=True)
         plot_model(self.discriminator, to_file='images/discriminator-model.png', show_shapes=True, show_layer_names=True)
