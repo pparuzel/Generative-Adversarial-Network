@@ -1,5 +1,6 @@
 # Generative-Adversarial-Network
-GAN Neural Network in Python 3.6 tested on MNIST datasets.
+GAN Neural Network in Python 3.7 tested on MNIST datasets.
+The **generator** creates images trying to trick the **discriminator** (human or the other net) into thinking that the generated image is real.
 
 ## Flowchart
 ![gan-flowchart](/flowchart.png)
