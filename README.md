@@ -2,11 +2,11 @@
 GAN Neural Network in Python 3.6 tested on MNIST datasets.
 
 ## Flowchart
-![gan_flowchart](/gan-architecture.png)
+![gan-flowchart](/flowchart.png)
 
 ## Generated samples by GAN
 ### MNIST
-![generated_mnist](/mnist-example/final.png)
+![generated-mnist](/mnist-example/final.png)
 
 ### Fashion MNIST
-![generated_fmnist](/fashion-mnist-example/final.png)
+![generated-fmnist](/fashion-mnist-example/final.png)
